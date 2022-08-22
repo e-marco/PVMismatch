@@ -16,6 +16,8 @@ from scipy.optimize import newton
 RS = 0.004267236774264931  # [ohm] series resistance
 RSH = 10.01226369025448  # [ohm] shunt resistance
 ISAT1_T0 = 2.286188161253440E-11  # [A] diode one saturation current
+n_1 = 1. # ideality factor of first diode
+n_2 = 2. # ideality factor of second diode
 ISAT2_T0 = 1.117455042372326E-6  # [A] diode two saturation current
 ISC0_T0 = 6.3056  # [A] reference short circuit current
 TCELL = 298.15  # [K] cell temperature
@@ -53,13 +55,15 @@ class PVcell(object):
     def __init__(self, Rs=RS, Rsh=RSH, Isat1_T0=ISAT1_T0, Isat2_T0=ISAT2_T0,
                  Isc0_T0=ISC0_T0, aRBD=ARBD, bRBD=BRBD, VRBD=VRBD_,
                  nRBD=NRBD, Eg=EG, alpha_Isc=ALPHA_ISC,
-                 Tcell=TCELL, Ee=1., pvconst=PVconstants()):
+                 Tcell=TCELL, Ee=1., n_1=n_1, n_2=n_2, pvconst=PVconstants()):
         # user inputs
         self.Rs = Rs  #: [ohm] series resistance
         self.Rsh = Rsh  #: [ohm] shunt resistance
         self.Isat1_T0 = Isat1_T0  #: [A] diode one sat. current at T0
         self.Isat2_T0 = Isat2_T0  #: [A] diode two saturation current
         self.Isc0_T0 = Isc0_T0  #: [A] short circuit current at T0
+        self.n_1 = n_1
+        self.n_2 = n_2
         self.aRBD = aRBD  #: reverse breakdown coefficient 1
         self.bRBD = bRBD  #: reverse breakdown coefficient 2
         self.VRBD = VRBD  #: [V] reverse breakdown voltage
@@ -127,8 +131,8 @@ class PVcell(object):
         if self.Isc == 0: return np.nan
         # short current (SC) conditions (Vcell = 0)
         Vdiode_sc = self.Isc * self.Rs  # diode voltage at SC
-        Idiode1_sc = self.Isat1 * (np.exp(Vdiode_sc / self.Vt) - 1.)
-        Idiode2_sc = self.Isat2 * (np.exp(Vdiode_sc / 2. / self.Vt) - 1.)
+        Idiode1_sc = self.Isat1 * (np.exp(Vdiode_sc / self.n_1 / self.Vt) - 1.)
+        Idiode2_sc = self.Isat2 * (np.exp(Vdiode_sc / self.n_2 / self.Vt) - 1.)
         Ishunt_sc = Vdiode_sc / self.Rsh  # diode voltage at SC
         # photogenerated current coefficient
         return 1. + (Idiode1_sc + Idiode2_sc + Ishunt_sc) / self.Isc
@@ -183,8 +187,8 @@ class PVcell(object):
         Returns Voc : numpy.ndarray of float, estimated open circuit voltage
         """
         Vdiode_sc = self.Isc0_T0 * self.Rs  # diode voltage at SC
-        Idiode1_sc = self.Isat1_T0 * (np.exp(Vdiode_sc / self.Vt) - 1.)
-        Idiode2_sc = self.Isat2_T0 * (np.exp(Vdiode_sc / 2. / self.Vt) - 1.)
+        Idiode1_sc = self.Isat1_T0 * (np.exp(Vdiode_sc / (self.n_1 * self.Vt)) - 1.)
+        Idiode2_sc = self.Isat2_T0 * (np.exp(Vdiode_sc / (self.n_2 * self.Vt)) - 1.)
         Ishunt_sc = Vdiode_sc / self.Rsh  # diode voltage at SC
         # photogenerated current coefficient
         Aph = 1. + (Idiode1_sc + Idiode2_sc + Ishunt_sc) / self.Isc0_T0
@@ -228,8 +232,8 @@ class PVcell(object):
         Vquad4 = Vff + delta_Voc * self.pvconst.Vmod_q4pts
         Vforward = Vff * self.pvconst.pts
         Vdiode = np.concatenate((Vreverse, Vforward, Vquad4), axis=0)
-        Idiode1 = self.Isat1 * (np.exp(Vdiode / self.Vt) - 1.)
-        Idiode2 = self.Isat2 * (np.exp(Vdiode / 2. / self.Vt) - 1.)
+        Idiode1 = self.Isat1 * (np.exp(Vdiode / (self.n_1 * self.Vt)) - 1.)
+        Idiode2 = self.Isat2 * (np.exp(Vdiode / (self.n_2 * self.Vt)) - 1.)
         Ishunt = Vdiode / self.Rsh
         fRBD = 1. - Vdiode / self.VRBD
         # use epsilon = 2.2204460492503131e-16 to avoid "divide by zero"
@@ -255,7 +259,7 @@ class PVcell(object):
     # http://en.wikipedia.org/wiki/William_Shockley
 
     @staticmethod
-    def f_Icell(Icell, Vcell, Igen, Rs, Vt, Isat1, Isat2, Rsh):
+    def f_Icell(Icell, Vcell, Igen, Rs, Vt, Isat1, Isat2, n_1, n_2, Rsh):
         """
         Objective function for Icell.
         :param Icell: cell current [A]
@@ -270,8 +274,8 @@ class PVcell(object):
         """
         # arbitrary current condition
         Vdiode = Vcell + Icell * Rs  # diode voltage
-        Idiode1 = Isat1 * (np.exp(Vdiode / Vt) - 1.)  # diode current
-        Idiode2 = Isat2 * (np.exp(Vdiode / 2. / Vt) - 1.)  # diode current
+        Idiode1 = Isat1 * (np.exp(Vdiode / (n_1 * Vt)) - 1.) # diode current
+        Idiode2 = Isat2 * (np.exp(Vdiode / (n_2 * Vt)) - 1.) # diode current
         Ishunt = Vdiode / Rsh  # shunt current
         return Igen - Idiode1 - Idiode2 - Ishunt - Icell
 
@@ -282,12 +286,12 @@ class PVcell(object):
         :return: Icell
         """
         args = (np.float64(Vcell), self.Igen, self.Rs, self.Vt,
-                self.Isat1, self.Isat2, self.Rsh)
+                self.Isat1, self.Isat2, self.n_1, self.n_2, self.Rsh)
         return newton(self.f_Icell, x0=self.Isc, args=args)
 
     @staticmethod
-    def f_Vcell(Vcell, Icell, Igen, Rs, Vt, Isat1, Isat2, Rsh):
-        return PVcell.f_Icell(Icell, Vcell, Igen, Rs, Vt, Isat1, Isat2, Rsh)
+    def f_Vcell(Vcell, Icell, Igen, Rs, Vt, Isat1, Isat2, n_1, n_2, Rsh):
+        return PVcell.f_Icell(Icell, Vcell, Igen, Rs, Vt, Isat1, Isat2, n_1, n_2, Rsh)
 
     def calcVcell(self, Icell):
         """
@@ -296,7 +300,7 @@ class PVcell(object):
         :return: Vcell
         """
         args = (np.float64(Icell), self.Igen, self.Rs, self.Vt,
-                self.Isat1, self.Isat2, self.Rsh)
+                self.Isat1, self.Isat2, self.n_1, self.n_2, self.Rsh)
         return newton(self.f_Vcell, x0=self.Voc, args=args)
 
     def plot(self):
