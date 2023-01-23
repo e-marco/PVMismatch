@@ -51,12 +51,23 @@ def npinterpx(x, xp, fp):
     # extrapolate left
     left = x < xp[0]
     xleft = x[left]
-    yleft = fp[0] + (xleft - xp[0]) / (xp[1] - xp[0]) * (fp[1] - fp[0])
+    
+    if (xp[1] - xp[0])==0:
+        yleft = fp[0]
+    elif (fp[1] - fp[0])==0:
+        yleft = fp[0]
+    else:    
+        yleft = fp[0] + (xleft - xp[0]) / (xp[1] - xp[0]) * (fp[1] - fp[0])
     y[left] = yleft
     # extrapolate right
     right = x > xp[-1]
     xright = x[right]
-    yright = fp[-1] + (xright - xp[-1]) / (xp[-2] - xp[-1]) * (fp[-2] - fp[-1])
+    if (xp[-2] - xp[-1])==0:
+        yright = fp[-1]
+    elif (fp[-2] - fp[-1])==0:
+        yright = fp[-1]
+    else:   
+        yright = fp[-1] + (xright - xp[-1]) / (xp[-2] - xp[-1]) * (fp[-2] - fp[-1])
     y[right] = yright
     return y
 
