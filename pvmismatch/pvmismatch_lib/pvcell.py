@@ -11,6 +11,8 @@ from pvmismatch.pvmismatch_lib.pvconstants import PVconstants
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.optimize import newton
+import functools
+import copy
 
 # Defaults
 RS = 0.004267236774264931  # [ohm] series resistance
@@ -29,6 +31,24 @@ EG = 1.1  # [eV] band gap of cSi
 ALPHA_ISC = 0.0003551  # [1/K] short circuit current temperature coefficient
 EPS = np.finfo(np.float64).eps
 
+def cached(f):
+    """
+    Memoize an object's method using the _cache dictionary on the object.
+    """
+    @functools.wraps(f)
+    def wrapper(self):
+        # note:  we use self.__wrapped__ instead of just using f directly
+        # so that we can spy on the original function in the test suite.
+        key = wrapper.__wrapped__.__name__
+        if key in self._cache:
+            return self._cache[key]
+        value = wrapper.__wrapped__(self)
+        self._cache[key] = value
+        return value
+    # store the original function to be accessible by the test suite.
+    # functools.wraps already sets this in python 3.2+, but for older versions:
+    wrapper.__wrapped__ = f
+    return wrapper
 class PVcell(object):
     """
     Class for PV cells.
@@ -56,6 +76,8 @@ class PVcell(object):
                  Isc0_T0=ISC0_T0, aRBD=ARBD, bRBD=BRBD, VRBD=VRBD_,
                  nRBD=NRBD, Eg=EG, alpha_Isc=ALPHA_ISC,
                  Tcell=TCELL, Ee=1., n_1=n_1, n_2=n_2, pvconst=PVconstants()):
+        # set up property cache
+        self._cache = {}                
         # user inputs
         self.Rs = Rs  #: [ohm] series resistance
         self.Rsh = Rsh  #: [ohm] shunt resistance
@@ -78,6 +100,7 @@ class PVcell(object):
         self.Pcell = None  #: cell power on IV curve [W]
         self.VocSTC = self._VocSTC()  #: estimated Voc at STC [V]
         # set calculation flag
+        super(PVcell, self).__setattr__('_calc_now', True)                                                  
         self._calc_now = True  # overwrites the class attribute
 
     def __str__(self):
@@ -95,10 +118,19 @@ class PVcell(object):
             pass  # fail silently if not float, eg: pvconst or _calc_now
         super(PVcell, self).__setattr__(key, value)
         # recalculate IV curve
+        self._cache.clear()
+                           
         if self._calc_now:
             Icell, Vcell, Pcell = self.calcCell()
             self.__dict__.update(Icell=Icell, Vcell=Vcell, Pcell=Pcell)
 
+    def clone(self):
+        """
+        Return a copy of this object with the same pvconst.
+        """
+        cloned = copy.copy(self)
+        super(PVcell, cloned).__setattr__('_cache', self._cache.copy())
+        return cloned                
     def update(self, **kwargs):
         """
         Update user-defined constants.
@@ -112,6 +144,7 @@ class PVcell(object):
         self._calc_now = True  # recalculate
 
     @property
+    @cached
     def Vt(self):
         """
         Thermal voltage in volts.
@@ -119,10 +152,12 @@ class PVcell(object):
         return self.pvconst.k * self.Tcell / self.pvconst.q
 
     @property
+    @cached       
     def Isc(self):
         return self.Ee * self.Isc0
 
     @property
+    @cached       
     def Aph(self):
         """
         Photogenerated current coefficient, non-dimensional.
@@ -131,13 +166,14 @@ class PVcell(object):
         if self.Isc == 0: return np.nan
         # short current (SC) conditions (Vcell = 0)
         Vdiode_sc = self.Isc * self.Rs  # diode voltage at SC
-        Idiode1_sc = self.Isat1 * (np.exp(Vdiode_sc / self.n_1 / self.Vt) - 1.)
-        Idiode2_sc = self.Isat2 * (np.exp(Vdiode_sc / self.n_2 / self.Vt) - 1.)
+        Idiode1_sc = self.Isat1 * (np.expm1(Vdiode_sc / self.n_1 / self.Vt) - 1.)
+        Idiode2_sc = self.Isat2 * (np.expm1(Vdiode_sc / self.n_2 / self.Vt) - 1.)
         Ishunt_sc = Vdiode_sc / self.Rsh  # diode voltage at SC
         # photogenerated current coefficient
         return 1. + (Idiode1_sc + Idiode2_sc + Ishunt_sc) / self.Isc
 
     @property
+    @cached       
     def Isat1(self):
         """
         Diode one saturation current at Tcell in amps.
@@ -145,11 +181,12 @@ class PVcell(object):
         _Tstar = self.Tcell ** 3. / self.pvconst.T0 ** 3.  # scaled temperature
         _inv_delta_T = 1. / self.pvconst.T0 - 1. / self.Tcell  # [1/K]
         _expTstar = np.exp(
-            self.Eg * self.pvconst.q / self.pvconst.k * _inv_delta_T
+            self.Eg * self.pvconst.q / self.n_1 / self.pvconst.k * _inv_delta_T
         )
         return self.Isat1_T0 * _Tstar * _expTstar  # [A] Isat1(Tcell)
 
     @property
+    @cached       
     def Isat2(self):
         """
         Diode two saturation current at Tcell in amps.
@@ -157,11 +194,15 @@ class PVcell(object):
         _Tstar = self.Tcell ** 3. / self.pvconst.T0 ** 3.  # scaled temperature
         _inv_delta_T = 1. / self.pvconst.T0 - 1. / self.Tcell  # [1/K]
         _expTstar = np.exp(
-            self.Eg * self.pvconst.q / (2.0 * self.pvconst.k) * _inv_delta_T
+            self.Eg * self.pvconst.q / (self.n_2 * self.pvconst.k) * _inv_delta_T
         )
-        return self.Isat2_T0 * _Tstar * _expTstar  # [A] Isat2(Tcell)
+        if self.Isat2_T0>0.0:
+            return self.Isat2_T0 * _Tstar * _expTstar  # [A] Isat2(Tcell)
+        else:
+            return 0.0
     
     @property
+    @cached       
     def Isc0(self):
         """
         Short circuit current at Tcell in amps.
@@ -170,6 +211,7 @@ class PVcell(object):
         return self.Isc0_T0 * (1. + self.alpha_Isc * _delta_T)  # [A] Isc0
 
     @property
+    @cached       
     def Voc(self):
         """
         Estimate open circuit voltage of cells.
@@ -177,9 +219,14 @@ class PVcell(object):
         """
         C = self.Aph * self.Isc + self.Isat1 + self.Isat2
         delta = self.Isat2 ** 2. + 4. * self.Isat1 * C
-        return self.Vt * np.log(
-            ((-self.Isat2 + np.sqrt(delta)) / 2. / self.Isat1) ** 2.
-        )
+        
+        if self.Isat2_T0>0.0:
+            return self.Vt * np.log(
+                ((-self.Isat2 + np.sqrt(delta)) / 2. / self.Isat1) ** 2.
+            )
+        else:
+            C = self.Aph * self.Isc / self.Isat1
+            return self.n_1 * self.Vt * np.log(1. + C)
 
     def _VocSTC(self):
         """
@@ -187,19 +234,26 @@ class PVcell(object):
         Returns Voc : numpy.ndarray of float, estimated open circuit voltage
         """
         Vdiode_sc = self.Isc0_T0 * self.Rs  # diode voltage at SC
-        Idiode1_sc = self.Isat1_T0 * (np.exp(Vdiode_sc / (self.n_1 * self.Vt)) - 1.)
-        Idiode2_sc = self.Isat2_T0 * (np.exp(Vdiode_sc / (self.n_2 * self.Vt)) - 1.)
+        Vt_sc = self.pvconst.k * self.pvconst.T0 / self.pvconst.q
+        Idiode1_sc = self.Isat1_T0 * (np.exp(Vdiode_sc / (self.n_1 * Vt_sc)) - 1.)
+        Idiode2_sc = self.Isat2_T0 * (np.exp(Vdiode_sc / (self.n_2 * Vt_sc)) - 1.)
         Ishunt_sc = Vdiode_sc / self.Rsh  # diode voltage at SC
         # photogenerated current coefficient
         Aph = 1. + (Idiode1_sc + Idiode2_sc + Ishunt_sc) / self.Isc0_T0
         # estimated Voc at STC
         C = Aph * self.Isc0_T0 + self.Isat1_T0 + self.Isat2_T0
         delta = self.Isat2_T0 ** 2. + 4. * self.Isat1_T0 * C
-        return self.Vt * np.log(
-            ((-self.Isat2_T0 + np.sqrt(delta)) / 2. / self.Isat1_T0) ** 2.
-        )
+        if self.Isat2_T0>0.0:
+            return Vt_sc * np.log(
+                ((-self.Isat2_T0 + np.sqrt(delta)) / 2. / self.Isat1_T0) ** 2.
+            )
+        else:
+            Isat = self.Isat1_T0 * (np.exp(Vdiode_sc / Vt_sc / self.n_1) - 1.)
+            return self.n_1 * Vt_sc * np.log(1. + self.Isc0_T0 / Isat)
+
 
     @property
+    @cached       
     def Igen(self):
         """
         Photovoltaic generated light current (AKA IL or Iph)
@@ -240,7 +294,7 @@ class PVcell(object):
         fRBD[fRBD == 0] = EPS
         Vdiode_norm = Vdiode / self.Rsh / self.Isc0_T0
         fRBD = self.Isc0_T0 * fRBD ** (-self.nRBD)
-        IRBD = (self.aRBD * Vdiode_norm + self.bRBD * Vdiode_norm ** 2) * fRBD 
+        IRBD = (self.aRBD * Vdiode_norm + self.bRBD * Vdiode_norm ** 2) * fRBD
         Icell = self.Igen - Idiode1 - Idiode2 - Ishunt - IRBD
         Vcell = Vdiode - Icell * self.Rs
         Pcell = Icell * Vcell
