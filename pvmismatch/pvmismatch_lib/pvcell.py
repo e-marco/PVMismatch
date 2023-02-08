@@ -49,6 +49,7 @@ def cached(f):
     # functools.wraps already sets this in python 3.2+, but for older versions:
     wrapper.__wrapped__ = f
     return wrapper
+    
 class PVcell(object):
     """
     Class for PV cells.
@@ -77,7 +78,7 @@ class PVcell(object):
                  nRBD=NRBD, Eg=EG, alpha_Isc=ALPHA_ISC,
                  Tcell=TCELL, Ee=1., n_1=n_1, n_2=n_2, pvconst=PVconstants()):
         # set up property cache
-        self._cache = {}                
+        self._cache = {}
         # user inputs
         self.Rs = Rs  #: [ohm] series resistance
         self.Rsh = Rsh  #: [ohm] shunt resistance
