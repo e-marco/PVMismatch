@@ -15,8 +15,8 @@ except IOError:
     pass
 
 INSTALL_REQUIRES = [
-    'numpy>=1.13.3', 'matplotlib>=2.1.0', 'scipy>=1.0.0', 'future>=0.16.0',
-    'six>=1.11.0'
+    'numpy', 'matplotlib', 'scipy', 'future',
+    'six'
 ]
 
 TESTS_REQUIRES = [
@@ -36,6 +36,11 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
     'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
     'Topic :: Scientific/Engineering',
 ]
 

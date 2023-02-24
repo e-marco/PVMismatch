@@ -37,20 +37,23 @@ except ImportError:
     def get_current_version(*args, **kwargs):
         raise NotGitRepository
 
-# import pvmismatch_lib modules so to match old API
-import pvmismatch.pvmismatch_lib.pvconstants as pvconstants
-import pvmismatch.pvmismatch_lib.pvcell as pvcell
-import pvmismatch.pvmismatch_lib.pvmodule as pvmodule
-import pvmismatch.pvmismatch_lib.pvstring as pvstring
-import pvmismatch.pvmismatch_lib.pvsystem as pvsystem
-import pvmismatch.pvmismatch_lib.pvexceptions as pvexceptions
+try:
+    # import pvmismatch_lib modules so to match old API
+    import pvmismatch.pvmismatch_lib.pvconstants as pvconstants
+    import pvmismatch.pvmismatch_lib.pvcell as pvcell
+    import pvmismatch.pvmismatch_lib.pvmodule as pvmodule
+    import pvmismatch.pvmismatch_lib.pvstring as pvstring
+    import pvmismatch.pvmismatch_lib.pvsystem as pvsystem
+    import pvmismatch.pvmismatch_lib.pvexceptions as pvexceptions
 
-# expose constructors to package's top level
-PVconstants = pvconstants.PVconstants
-PVcell = pvcell.PVcell
-PVmodule = pvmodule.PVmodule
-PVstring = pvstring.PVstring
-PVsystem = pvsystem.PVsystem
+    # expose constructors to package's top level
+    PVconstants = pvconstants.PVconstants
+    PVcell = pvcell.PVcell
+    PVmodule = pvmodule.PVmodule
+    PVstring = pvstring.PVstring
+    PVsystem = pvsystem.PVsystem
+except ImportError:
+    pass
 
 # Dulwich Release Robot
 BASEDIR = os.path.dirname(__file__)  # this directory
@@ -80,5 +83,5 @@ __author__ = 'Mark Mikofski'
 __email__ = u'mark.mikofski@sunpowercorp.com'
 __url__ = u'https://github.com/SunPower/PVMismatch'
 __version__ = VERSION
-__release__ = 'Nepal Negroni'
+__release__ = 'Marco Ernst'
 __all__ = ['pvconstants', 'pvcell', 'pvmodule', 'pvstring', 'pvsystem']
