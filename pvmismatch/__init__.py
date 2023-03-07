@@ -41,6 +41,7 @@ try:
     # import pvmismatch_lib modules so to match old API
     import pvmismatch.pvmismatch_lib.pvconstants as pvconstants
     import pvmismatch.pvmismatch_lib.pvcell as pvcell
+    import pvmismatch.pvmismatch_lib.pvcell_from_data as pvcell_from_data
     import pvmismatch.pvmismatch_lib.pvmodule as pvmodule
     import pvmismatch.pvmismatch_lib.pvstring as pvstring
     import pvmismatch.pvmismatch_lib.pvsystem as pvsystem
@@ -84,4 +85,4 @@ __email__ = u'mark.mikofski@sunpowercorp.com'
 __url__ = u'https://github.com/SunPower/PVMismatch'
 __version__ = VERSION
 __release__ = 'Marco Ernst'
-__all__ = ['pvconstants', 'pvcell', 'pvmodule', 'pvstring', 'pvsystem']
+__all__ = ['pvconstants', 'pvcell', 'pvcell_from_data', 'pvmodule', 'pvstring', 'pvsystem']
