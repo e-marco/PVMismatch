@@ -203,7 +203,7 @@ class PVmodule(object):
     :param cellArea: cell area [cm^2]
     """
     def __init__(self, cell_pos=STD96, pvcells=None, pvconst=None,
-                 Vbypass=None, cellArea=CELLAREA):
+                 Vbypass=None, cellArea=CELLAREA, modRs=0.0):
         # TODO: check cell position pattern
         self.cell_pos = cell_pos  #: cell position pattern dictionary
         self.numberCells = sum([len(c) for s in self.cell_pos for c in s])
@@ -247,6 +247,7 @@ class PVmodule(object):
         self.pvcells = pvcells  #: list of `PVcell` objects in this `PVmodule`
         self.numSubStr = len(self.cell_pos)  #: number of substrings
         self.subStrCells = [len(_) for _ in self.cell_pos]  #: cells per substr
+        self.modRs = modRs
         # initialize members so PyLint doesn't get upset
         self.Imod, self.Vmod, self.Pmod, self.Isubstr, self.Vsubstr = self.calcMod()
 
@@ -566,6 +567,10 @@ class PVmodule(object):
             Vmod[bypassed] = self.Vbypass[0]
         else:
             pass
+
+
+        # Add module-level Rs
+        Vmod = Vmod - Imod * self.modRs
 
         Pmod = Imod * Vmod
         return Imod, Vmod, Pmod, Isubstr, Vsubstr

@@ -248,7 +248,7 @@ class AdvCnf_tk(Frame):
     def validateWidget(self, *args):
         # W = Tkinter.W = 'w' is already used, so use W_ instead
         (d, i, P, s, S, v, V, W_) = args  # @UnusedVariable # IGNORE:W0612
-        print "OnValidate:",
+        print("OnValidate:")
         print("d={}, i={}, P={}, s={}, S={}, v={}, V={}, W={}".format(*args))
         if W_ == '.advCnfTop.advCnf.rsEntry':
             valType = FLOATS
@@ -304,7 +304,7 @@ class AdvCnf_tk(Frame):
 
     def invalidWidget(self, *args):
         (d, i, P, s, S, v, V, W_) = args  # @UnusedVariable # IGNORE:W0612
-        print "OnInvalid: ",
+        print("OnInvalid: ")
         print("d={}, i={}, P={}, s={}, S={}, v={}, V={}, W={}".format(*args))
         if W_ == ".advCnfTop.advCnf.rsEntry":
             errText = 'Invalid series resistance!'

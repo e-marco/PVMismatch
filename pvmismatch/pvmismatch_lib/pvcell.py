@@ -27,7 +27,7 @@ ARBD = 1.036748445065697E-4  # reverse breakdown coefficient 1
 BRBD = 0.  # reverse breakdown coefficient 2
 VRBD_ = -5.527260068445654  # [V] reverse breakdown voltage
 NRBD = 3.284628553041425  # reverse breakdown exponent
-EG = 1.1  # [eV] band gap of cSi
+EG = 1.12  # [eV] band gap of cSi
 ALPHA_ISC = 0.0003551  # [1/K] short circuit current temperature coefficient
 EPS = np.finfo(np.float64).eps
 
@@ -168,10 +168,13 @@ class PVcell(object):
         # short current (SC) conditions (Vcell = 0)
         Vdiode_sc = self.Isc * self.Rs  # diode voltage at SC
         Idiode1_sc = self.Isat1 * (np.expm1(Vdiode_sc / self.n_1 / self.Vt) - 1.)
-        Idiode2_sc = self.Isat2 * (np.expm1(Vdiode_sc / self.n_2 / self.Vt) - 1.)
         Ishunt_sc = Vdiode_sc / self.Rsh  # diode voltage at SC
         # photogenerated current coefficient
-        return 1. + (Idiode1_sc + Idiode2_sc + Ishunt_sc) / self.Isc
+        if (self.Isat2>0.0):
+            Idiode2_sc = self.Isat2 * (np.expm1(Vdiode_sc / self.n_2 / self.Vt) - 1.)
+            return 1. + (Idiode1_sc + Idiode2_sc + Ishunt_sc) / self.Isc
+        else:
+            return 1. + (Idiode1_sc + Ishunt_sc) / self.Isc
 
     @property
     @cached       
@@ -218,10 +221,10 @@ class PVcell(object):
         Estimate open circuit voltage of cells.
         Returns Voc : numpy.ndarray of float, estimated open circuit voltage
         """
-        C = self.Aph * self.Isc + self.Isat1 + self.Isat2
-        delta = self.Isat2 ** 2. + 4. * self.Isat1 * C
         
         if self.Isat2_T0>0.0:
+            C = self.Aph * self.Isc + self.Isat1 + self.Isat2
+            delta = self.Isat2 ** 2. + 4. * self.Isat1 * C
             return self.Vt * np.log(
                 ((-self.Isat2 + np.sqrt(delta)) / 2. / self.Isat1) ** 2.
             )
@@ -237,18 +240,23 @@ class PVcell(object):
         Vdiode_sc = self.Isc0_T0 * self.Rs  # diode voltage at SC
         Vt_sc = self.pvconst.k * self.pvconst.T0 / self.pvconst.q
         Idiode1_sc = self.Isat1_T0 * (np.exp(Vdiode_sc / (self.n_1 * Vt_sc)) - 1.)
-        Idiode2_sc = self.Isat2_T0 * (np.exp(Vdiode_sc / (self.n_2 * Vt_sc)) - 1.)
         Ishunt_sc = Vdiode_sc / self.Rsh  # diode voltage at SC
-        # photogenerated current coefficient
-        Aph = 1. + (Idiode1_sc + Idiode2_sc + Ishunt_sc) / self.Isc0_T0
-        # estimated Voc at STC
-        C = Aph * self.Isc0_T0 + self.Isat1_T0 + self.Isat2_T0
-        delta = self.Isat2_T0 ** 2. + 4. * self.Isat1_T0 * C
+        
         if self.Isat2_T0>0.0:
+            Idiode2_sc = self.Isat2_T0 * (np.exp(Vdiode_sc / (self.n_2 * Vt_sc)) - 1.)
+            # photogenerated current coefficient
+            Aph = 1. + (Idiode1_sc + Idiode2_sc + Ishunt_sc) / self.Isc0_T0
+            # estimated Voc at STC
+            C = Aph * self.Isc0_T0 + self.Isat1_T0 + self.Isat2_T0
+            delta = self.Isat2_T0 ** 2. + 4. * self.Isat1_T0 * C
             return Vt_sc * np.log(
                 ((-self.Isat2_T0 + np.sqrt(delta)) / 2. / self.Isat1_T0) ** 2.
             )
         else:
+            # photogenerated current coefficient
+            Aph = 1. + (Idiode1_sc + Ishunt_sc) / self.Isc0_T0
+            # estimated Voc at STC
+            C = Aph * self.Isc0_T0 + self.Isat1_T0
             Isat = self.Isat1_T0 * (np.exp(Vdiode_sc / Vt_sc / self.n_1) - 1.)
             return self.n_1 * Vt_sc * np.log(1. + self.Isc0_T0 / Isat)
 
@@ -288,7 +296,11 @@ class PVcell(object):
         Vforward = Vff * self.pvconst.pts
         Vdiode = np.concatenate((Vreverse, Vforward, Vquad4), axis=0)
         Idiode1 = self.Isat1 * (np.exp(Vdiode / (self.n_1 * self.Vt)) - 1.)
-        Idiode2 = self.Isat2 * (np.exp(Vdiode / (self.n_2 * self.Vt)) - 1.)
+        if (self.Isat2>0.0):
+            Idiode2 = self.Isat2 * (np.exp(Vdiode / (self.n_2 * self.Vt)) - 1.)
+        else:
+            Idiode2 = 0.0
+        
         Ishunt = Vdiode / self.Rsh
         fRBD = 1. - Vdiode / self.VRBD
         # use epsilon = 2.2204460492503131e-16 to avoid "divide by zero"
@@ -330,7 +342,10 @@ class PVcell(object):
         # arbitrary current condition
         Vdiode = Vcell + Icell * Rs  # diode voltage
         Idiode1 = Isat1 * (np.exp(Vdiode / (n_1 * Vt)) - 1.) # diode current
-        Idiode2 = Isat2 * (np.exp(Vdiode / (n_2 * Vt)) - 1.) # diode current
+        if Isat2>0.0:
+            Idiode2 = Isat2 * (np.exp(Vdiode / (n_2 * Vt)) - 1.) # diode current
+        else:
+            Idiode2 = 0.0
         Ishunt = Vdiode / Rsh  # shunt current
         return Igen - Idiode1 - Idiode2 - Ishunt - Icell
 

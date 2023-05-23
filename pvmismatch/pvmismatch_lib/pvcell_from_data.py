@@ -188,7 +188,7 @@ class PVcell(object):
         Returns (Icell, Vcell, Pcell) : tuple of numpy.ndarray of float
         """
         Vreverse = self.VRBD * self.pvconst.negpts
-        Vff = self.Voc
+        Vff = max(self.Voltages)#self.Voc
         delta_Voc = self.VocSTC - self.Voc
         # to make sure that the max voltage is always in the 4th quadrant, add
         # a third set of points log spaced with decreasing density, from Voc to
@@ -196,10 +196,10 @@ class PVcell(object):
         # 80% of Voc as an estimate of Vmp assuming a fill factor of 80% and
         # Isc close to Imp, or if Voc > Voc @ STC, then use Voc as the max
         if delta_Voc == 0:
-            Vff = 0.8 * self.Voc
-            delta_Voc = 0.2 * self.Voc
+            Vff = 0.8 * max(self.Voltages)#self.Voc
+            delta_Voc = 0.2 * max(self.Voltages)#self.Voc * 1.1
         elif delta_Voc < 0:
-            Vff = self.VocSTC
+            Vff = self.VocSTC# * 1.1
             delta_Voc = -delta_Voc
         Vquad4 = Vff + delta_Voc * self.pvconst.Vmod_q4pts
         Vforward = Vff * self.pvconst.pts
@@ -212,6 +212,8 @@ class PVcell(object):
         fRBD = self.Isc0_T0 * fRBD ** (-self.nRBD)
         Vdiode_norm = Vcell / self.Isc0_T0
         IRBD = (self.aRBD * Vdiode_norm + self.bRBD * Vdiode_norm ** 2) * fRBD
+        
+        IRBD = np.clip(IRBD, a_min=-3.0*self.Isc0_T0, a_max=None)
         
         Icell = np.interp(Vcell, self.Voltages, self.Currents, left=self.Isc, right=None)
         Icell -= IRBD
