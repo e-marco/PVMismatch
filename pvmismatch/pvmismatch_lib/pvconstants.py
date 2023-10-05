@@ -208,7 +208,7 @@ def Vdiode(Icell, Vcell, Rs):
 
     :param Icell: cell current [A]
     :param Vcell: cell voltage [V]
-    :param Rs: cell series resistance [:math:`\Omega`]
+    :param Rs: cell series resistance [Ohm]
     :return: diode voltage [V]
     """
     return Vcell + Icell * Rs
