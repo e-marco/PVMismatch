@@ -4,9 +4,6 @@ This module contains the :class:`~pvmismatch.pvmismatch_lib.pvsystem.PVsystem`
 class.
 """
 
-from __future__ import absolute_import
-from past.builtins import basestring
-from future.utils import iteritems
 import numpy as np
 from copy import copy
 from matplotlib import pyplot as plt
@@ -157,7 +154,7 @@ class PVsystem(object):
             for pvstr in self.pvstrs:
                 pvstr.setSuns(Ee)
         else:
-            for pvstr, pvmod_Ee in iteritems(Ee):
+            for pvstr, pvmod_Ee in Ee.items():
                 pvstr = int(pvstr)
                 self.pvstrs[pvstr] = copy(self.pvstrs[pvstr])
                 self.pvstrs[pvstr].setSuns(pvmod_Ee)
@@ -194,7 +191,7 @@ class PVsystem(object):
             for pvstr in self.pvstrs:
                 pvstr.setTemps(Tc)
         else:
-            for pvstr, pvmod_Tc in iteritems(Tc):
+            for pvstr, pvmod_Tc in Tc.items():
                 pvstr = int(pvstr)
                 self.pvstrs[pvstr] = copy(self.pvstrs[pvstr])
                 self.pvstrs[pvstr].setTemps(pvmod_Tc)

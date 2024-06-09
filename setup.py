@@ -15,8 +15,7 @@ except IOError:
     pass
 
 INSTALL_REQUIRES = [
-    'numpy', 'matplotlib', 'scipy', 'future',
-    'six'
+    'numpy', 'matplotlib', 'scipy'
 ]
 
 TESTS_REQUIRES = [

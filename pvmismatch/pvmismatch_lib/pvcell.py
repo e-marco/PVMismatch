@@ -5,8 +5,6 @@ This module contains the :class:`~pvmismatch.pvmismatch_lib.pvcell.PVcell`
 object which is used by modules, strings and systems.
 """
 
-from __future__ import absolute_import
-from future.utils import iteritems
 from pvmismatch.pvmismatch_lib.pvconstants import PVconstants
 import numpy as np
 from matplotlib import pyplot as plt
@@ -140,7 +138,7 @@ class PVcell(object):
         self._calc_now = False
         # don't use __dict__.update() instead use setattr() to go through
         # custom __setattr__() so that numbers are cast to floats
-        for k, v in iteritems(kwargs):
+        for k, v in kwargs.items():
             setattr(self, k, v)
         self._calc_now = True  # recalculate
 

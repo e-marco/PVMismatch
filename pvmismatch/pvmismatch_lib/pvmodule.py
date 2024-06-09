@@ -3,10 +3,6 @@
 This module defines the :class:`~pvmismatch.pvmismatch_lib.pvmodule.PVmodule`.
 """
 
-from __future__ import absolute_import
-from past.builtins import xrange, range
-from builtins import zip
-from six import itervalues
 import numpy as np
 from matplotlib import pyplot as plt
 # use absolute imports instead of relative, so modules are portable
@@ -46,9 +42,9 @@ def standard_cellpos_pat(nrows, ncols_per_substr):
     for substr_cols in ncols_per_substr:
         ncols[0], ncols[1] = ncols[1], ncols[1] + substr_cols
         newsubstr = []
-        for col in xrange(*ncols):
+        for col in range(*ncols):
             newrow = []
-            for row in xrange(nrows):
+            for row in range(nrows):
                 idx = col * nrows
                 if col % 2 == 0:
                     idx += row
@@ -101,9 +97,9 @@ def crosstied_cellpos_pat(nrows_per_substrs, ncols, partial=False):
     for substr_row in nrows_per_substrs:
         nrows[0], nrows[1] = nrows[1], nrows[1] + substr_row
         newsubstr = []
-        for col in xrange(ncols):
+        for col in range(ncols):
             newrow = []
-            for row in xrange(*nrows):
+            for row in range(*nrows):
                 crosstie = True
                 if partial and newrow:
                     crosstie = False
@@ -299,7 +295,7 @@ class PVmodule(object):
         """
         if cells is None:
             if np.isscalar(Ee):
-                new_pvcells = range(self.numberCells)  # new list of cells
+                new_pvcells = list(range(self.numberCells))  # new list of cells
                 old_pvcells = dict.fromkeys(self.pvcells)  # same as set(pvcells)
                 for cell_id, pvcell in enumerate(self.pvcells):
                     if old_pvcells[pvcell] is None:
@@ -308,7 +304,7 @@ class PVmodule(object):
                     else:
                         new_pvcells[cell_id] = old_pvcells[pvcell]
                 self.pvcells = new_pvcells
-                pvcell_set = itervalues(old_pvcells)
+                pvcell_set = old_pvcells.values()
                 for pvc in pvcell_set:
                     pvc.Ee = Ee
             elif np.size(Ee) == self.numberCells:
@@ -371,7 +367,7 @@ class PVmodule(object):
         """
         if cells is None:
             if np.isscalar(Tc):
-                new_pvcells = range(self.numberCells)  # new list of cells
+                new_pvcells = list(range(self.numberCells))  # new list of cells
                 old_pvcells = dict.fromkeys(self.pvcells)  # same as set(pvcells)
                 for cell_id, pvcell in enumerate(self.pvcells):
                     if old_pvcells[pvcell] is None:
@@ -380,7 +376,7 @@ class PVmodule(object):
                     else:
                         new_pvcells[cell_id] = old_pvcells[pvcell]
                 self.pvcells = new_pvcells
-                pvcell_set = itervalues(old_pvcells)
+                pvcell_set = old_pvcells.values()
                 for pvc in pvcell_set:
                     pvc.Tcell = Tc
             elif np.size(Tc) == self.numberCells:
