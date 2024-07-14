@@ -100,7 +100,7 @@ class PVstring(object):
 
         """
         if np.isscalar(Ee):
-            new_pvmods = range(self.numberMods)  # new list of modules
+            new_pvmods = list(range(self.numberMods))  # new list of modules
             old_pvmods = dict.fromkeys(self.pvmods)  # same as set(pvmods)
             for mod_id, pvmod in enumerate(self.pvmods):
                 if old_pvmods[pvmod] is None:
@@ -129,7 +129,7 @@ class PVstring(object):
                 if len(Ee) > 1:
                     raise TypeError('Irradiance, Ee, should be scalar or dict')
                 Ee = Ee[0]
-                new_pvmods = range(self.numberMods)  # new list of modules
+                new_pvmods = list(range(self.numberMods))  # new list of modules
                 old_pvmods = dict.fromkeys(self.pvmods)  # same as set(pvmods)
                 for mod_id, pvmod in enumerate(self.pvmods):
                     if old_pvmods[pvmod] is None:
@@ -163,7 +163,7 @@ class PVstring(object):
 
         """
         if np.isscalar(Tc):
-            new_pvmods = range(self.numberMods)  # new list of modules
+            new_pvmods = list(range(self.numberMods))  # new list of modules
             old_pvmods = dict.fromkeys(self.pvmods)  # same as set(pvmods)
             for mod_id, pvmod in enumerate(self.pvmods):
                 if old_pvmods[pvmod] is None:
@@ -192,7 +192,7 @@ class PVstring(object):
                 if len(Tc) > 1:
                     raise TypeError('Irradiance, Ee, should be scalar or dict')
                 Tc = Tc[0]
-                new_pvmods = range(self.numberMods)  # new list of modules
+                new_pvmods = list(range(self.numberMods))  # new list of modules
                 old_pvmods = dict.fromkeys(self.pvmods)  # same as set(pvmods)
                 for mod_id, pvmod in enumerate(self.pvmods):
                     if old_pvmods[pvmod] is None:
