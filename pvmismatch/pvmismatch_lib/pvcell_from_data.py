@@ -268,7 +268,7 @@ class PVcell(object):
 
     def _estimate_internal_series_resistance(self):
         select_val = (abs(np.asarray(self.Currents)) <= 
-                      0.1*max(abs(np.asarray(self.Currents))))
+                      0.1*max(np.asarray(self.Currents)))
 
         X = np.asarray(self.Currents)[select_val]
         Y = np.asarray(self.Voltages)[select_val]
