@@ -267,8 +267,12 @@ class PVcell(object):
 
 
     def _estimate_internal_series_resistance(self):
-        select_val = (abs(np.asarray(self.Currents)) <= 
-                      0.1*max(np.asarray(self.Currents)))
+        #select_val = (abs(np.asarray(self.Currents)) <= 
+        #              0.1*max(np.asarray(self.Currents)))
+        sorted_indices = np.argsort(abs(np.asarray(self.Currents)))
+        # Use the three smallest values near zero
+        select_val = np.zeros_like(self.Currents, dtype=bool)
+        select_val[sorted_indices[:3]] = True
 
         X = np.asarray(self.Currents)[select_val]
         Y = np.asarray(self.Voltages)[select_val]
