@@ -7,7 +7,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 # use absolute imports instead of relative, so modules are portable
 from pvmismatch.pvmismatch_lib.pvconstants import PVconstants, get_series_cells
-from pvmismatch.pvmismatch_lib.pvcell import PVcell
+# from pvmismatch.pvmismatch_lib.pvcell import PVcell
 from pvmismatch.pvmismatch_lib.pvexceptions import PVexception
 
 VBYPASS = np.float64(-0.5)  # [V] trigger voltage of bypass diode
@@ -199,7 +199,12 @@ class PVmodule(object):
     :param cellArea: cell area [cm^2]
     """
     def __init__(self, cell_pos=STD96, pvcells=None, pvconst=None,
-                 Vbypass=None, cellArea=CELLAREA, modRs=0.0):
+                 Vbypass=None, cellArea=CELLAREA, modRs=0.0, from_iv_data=False):
+        if from_iv_data:
+            from pvmismatch.pvmismatch_lib.pvcell_from_data import PVcell
+        else:
+            from pvmismatch.pvmismatch_lib.pvcell import PVcell
+        
         # TODO: check cell position pattern
         self.cell_pos = cell_pos  #: cell position pattern dictionary
         self.numberCells = sum([len(c) for s in self.cell_pos for c in s])
