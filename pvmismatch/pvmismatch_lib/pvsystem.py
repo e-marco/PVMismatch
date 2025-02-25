@@ -25,7 +25,7 @@ class PVsystem(object):
     :param pvmods: list of modules, a ``PVmodule`` object or None
     """
     def __init__(self, pvconst=None, numberStrs=NUMBERSTRS,
-                 pvstrs=None, numberMods=NUMBERMODS, pvmods=None):
+                 pvstrs=None, numberMods=NUMBERMODS, pvmods=None, from_iv_data=False):
         # is pvstrs a list?
         try:
             pvstr0 = pvstrs[0]
@@ -39,7 +39,7 @@ class PVsystem(object):
                     pvconst = PVconstants()
                 # create a pvstring
                 pvstrs = PVstring(numberMods=numberMods, pvmods=pvmods,
-                                  pvconst=pvconst)
+                                  pvconst=pvconst, from_iv_data=from_iv_data)
             # expand pvstrs to list
             pvstrs = [pvstrs] * numberStrs
             numberMods = [numberMods] * numberStrs

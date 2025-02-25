@@ -23,7 +23,7 @@ class PVstring(object):
     :param pvconst: a configuration constants object
     """
     def __init__(self, numberMods=NUMBERMODS, pvmods=None,
-                 pvconst=None):
+                 pvconst=None, from_iv_data=False):
         # is pvmods a list?
         try:
             pvmod0 = pvmods[0]
@@ -36,7 +36,7 @@ class PVstring(object):
                 if not pvconst:
                     pvconst = PVconstants()
                 # create pvmod
-                pvmods = PVmodule(pvconst=pvconst)
+                pvmods = PVmodule(pvconst=pvconst, from_iv_data=from_iv_data)
             # expand pvmods to list
             pvmods = [pvmods] * numberMods
         else:
