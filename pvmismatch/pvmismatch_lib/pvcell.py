@@ -216,47 +216,48 @@ class PVcell(object):
     @cached       
     def Voc(self):
         """
-        Estimate open circuit voltage of cells.
-        Returns Voc : numpy.ndarray of float, estimated open circuit voltage
+        Open-circuit voltage, defined by Icell(Voc)=0.
+        Computed by Newton’s method for full fidelity even at high n₁.
         """
-        
-        if self.Isat2_T0>0.0:
-            C = self.Aph * self.Isc + self.Isat1 + self.Isat2
-            delta = self.Isat2 ** 2. + 4. * self.Isat1 * C
-            return self.Vt * np.log(
-                ((-self.Isat2 + np.sqrt(delta)) / 2. / self.Isat1) ** 2.
-            )
-        else:
-            C = self.Aph * self.Isc / self.Isat1
-            return self.n_1 * self.Vt * np.log(1. + C)
+        # 1) initial guess: one-diode analytic
+        x0 = self.n_1 * self.Vt * np.log(1. + self.Isc / self.Isat1)
+        # 2) solve f_Vcell(V, Icell=0) == 0
+        return newton(
+            self.f_Vcell,
+            x0,
+            args=(np.float64(0.0),
+                  self.Igen,
+                  self.Rs,
+                  self.Vt,
+                  self.Isat1,
+                  self.Isat2,
+                  self.n_1,
+                  self.n_2,
+                  self.Rsh)
+        )
 
     def _VocSTC(self):
         """
         Estimate open circuit voltage of cells.
         Returns Voc : numpy.ndarray of float, estimated open circuit voltage
         """
-        Vdiode_sc = self.Isc0_T0 * self.Rs  # diode voltage at SC
-        Vt_sc = self.pvconst.k * self.pvconst.T0 / self.pvconst.q
-        Idiode1_sc = self.Isat1_T0 * (np.exp(Vdiode_sc / (self.n_1 * Vt_sc)) - 1.)
-        Ishunt_sc = Vdiode_sc / self.Rsh  # diode voltage at SC
-        
-        if self.Isat2_T0>0.0:
-            Idiode2_sc = self.Isat2_T0 * (np.exp(Vdiode_sc / (self.n_2 * Vt_sc)) - 1.)
-            # photogenerated current coefficient
-            Aph = 1. + (Idiode1_sc + Idiode2_sc + Ishunt_sc) / self.Isc0_T0
-            # estimated Voc at STC
-            C = Aph * self.Isc0_T0 + self.Isat1_T0 + self.Isat2_T0
-            delta = self.Isat2_T0 ** 2. + 4. * self.Isat1_T0 * C
-            return Vt_sc * np.log(
-                ((-self.Isat2_T0 + np.sqrt(delta)) / 2. / self.Isat1_T0) ** 2.
-            )
-        else:
-            # photogenerated current coefficient
-            Aph = 1. + (Idiode1_sc + Ishunt_sc) / self.Isc0_T0
-            # estimated Voc at STC
-            C = Aph * self.Isc0_T0 + self.Isat1_T0
-            Isat = self.Isat1_T0 * (np.exp(Vdiode_sc / Vt_sc / self.n_1) - 1.)
-            return self.n_1 * Vt_sc * np.log(1. + self.Isc0_T0 / Isat)
+      
+        # initial guess using the one-diode formula at T0
+        Vt0 = self.pvconst.k * self.pvconst.T0 / self.pvconst.q
+        x0 = self.n_1 * Vt0 * np.log(1. + self.Isc0_T0 / self.Isat1_T0)
+        return newton(
+            self.f_Vcell,
+            x0,
+            args=(np.float64(0.0),
+                  self.Isc0_T0,  # Igen@STC = Isc0_T0 * Aph0 ≈ Isc0_T0
+                  self.Rs,
+                  Vt0,
+                  self.Isat1_T0,
+                  self.Isat2_T0,
+                  self.n_1,
+                  self.n_2,
+                  self.Rsh)
+        )
 
 
     @property
