@@ -24,65 +24,25 @@ This package contains an application that can be run using
 :mod:`pvmismatch.pv_tk`.
 """
 
-import os
-import importlib
 
-# try to import Dulwich or create dummies
-try:
-    from dulwich.contrib.release_robot import get_current_version
-    from dulwich.repo import NotGitRepository
-except ImportError:
-    NotGitRepository = NotImplementedError
+from importlib import import_module
 
-    def get_current_version(*args, **kwargs):
-        raise NotGitRepository
+# Pull in VERSION from version.py
+__version__ = import_module(f"{__package__}.version").VERSION
 
-try:
-    # import pvmismatch_lib modules so to match old API
-    import pvmismatch.pvmismatch_lib.pvconstants as pvconstants
-    import pvmismatch.pvmismatch_lib.pvcell as pvcell
-    import pvmismatch.pvmismatch_lib.pvcell_from_data as pvcell_from_data
-    import pvmismatch.pvmismatch_lib.pvmodule as pvmodule
-    import pvmismatch.pvmismatch_lib.pvstring as pvstring
-    import pvmismatch.pvmismatch_lib.pvsystem as pvsystem
-    import pvmismatch.pvmismatch_lib.pvexceptions as pvexceptions
+from .pvmismatch_lib import (
+    pvconstants, pvcell, pvcell_from_data,
+    pvmodule, pvstring, pvsystem, pvexceptions,
+)
+PVconstants = pvconstants.PVconstants
+PVcell      = pvcell.PVcell
+PVmodule    = pvmodule.PVmodule
+PVstring    = pvstring.PVstring
+PVsystem    = pvsystem.PVsystem
 
-    # expose constructors to package's top level
-    PVconstants = pvconstants.PVconstants
-    PVcell = pvcell.PVcell
-    PVmodule = pvmodule.PVmodule
-    PVstring = pvstring.PVstring
-    PVsystem = pvsystem.PVsystem
-except ImportError:
-    pass
-
-# Dulwich Release Robot
-BASEDIR = os.path.dirname(__file__)  # this directory
-PROJDIR = os.path.dirname(BASEDIR)
-VER_FILE = 'version'  # name of file to store version
-# use release robot to try to get current Git tag
-try:
-    GIT_TAG = get_current_version(PROJDIR)
-except NotGitRepository:
-    GIT_TAG = None
-# check version file
-try:
-    version = importlib.import_module('%s.%s' % (__name__, VER_FILE))
-except ImportError:
-    VERSION = None
-else:
-    VERSION = version.VERSION
-# update version file if it differs from Git tag
-if GIT_TAG is not None and VERSION != GIT_TAG:
-    with open(os.path.join(BASEDIR, VER_FILE + '.py'), 'w') as vf:
-        vf.write('VERSION = "%s"\n' % GIT_TAG)
-else:
-    GIT_TAG = VERSION  # if Git tag is none use version file
-VERSION = GIT_TAG  # version
-
-__author__ = 'Mark Mikofski'
-__email__ = u'mark.mikofski@sunpowercorp.com'
-__url__ = u'https://github.com/SunPower/PVMismatch'
-__version__ = VERSION
-__release__ = 'Marco Ernst'
-__all__ = ['pvconstants', 'pvcell', 'pvcell_from_data', 'pvmodule', 'pvstring', 'pvsystem']
+__all__ = [
+    "PVconstants", "PVcell", "PVmodule", "PVstring", "PVsystem",
+    "pvconstants", "pvcell", "pvcell_from_data",
+    "pvmodule", "pvstring", "pvsystem", "pvexceptions",
+    "__version__",
+]
