@@ -4,16 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pvmismatch"
-version = {attr = "pvmismatch.__version__"}
+version = { attr = "pvmismatch.__version__" }
 description = "PV Mismatch Calculator"
 readme = "README.rst"
 authors            = [
   { name = "Mark Mikofski", email = "mark.mikofski@sunpowercorp.com" },
 ]
-urls               = { 
-  "Homepage"   = "https://github.com/SunPower/PVMismatch",
-  "Repository" = "https://github.com/SunPower/PVMismatch",
-}
 license = { text = "BSD 3-clause" }
 dependencies = [
   "numpy",
@@ -32,6 +28,10 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Topic :: Scientific/Engineering",
 ]
+
+[project.urls]
+Homepage   = "https://github.com/SunPower/PVMismatch"
+Repository = "https://github.com/SunPower/PVMismatch"
 
 [project.optional-dependencies]
 test = [
