@@ -24,11 +24,18 @@ This package contains an application that can be run using
 :mod:`pvmismatch.pv_tk`.
 """
 
+# Import the version from the package metadata.
+try:
+    # Python 3.8+
+    from importlib.metadata import version, PackageNotFoundError
+except ImportError:
+    # Python <3.8
+    from importlib_metadata import version, PackageNotFoundError
 
-from importlib import import_module
-
-# Pull in VERSION from version.py
-__version__ = import_module(f"{__package__}.version").VERSION
+try:
+    __version__ = version(__name__)
+except PackageNotFoundError:
+    __version__ = "0+unknown"
 
 from .pvmismatch_lib import (
     pvconstants, pvcell, pvcell_from_data,

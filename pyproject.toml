@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pvmismatch"
-version = { attr = "pvmismatch.__version__" }
+version = "4.2.0"
 description = "PV Mismatch Calculator"
 readme = "README.rst"
 authors            = [
